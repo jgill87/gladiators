@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Gladiators" />
+<meta name="theme-color" content="#0a0a1e" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230a0a1e'/%3E%3Ctext x='90' y='130' font-size='140' text-anchor='middle' font-family='Impact, sans-serif' fill='%23ffeb00'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+<title>GLADIATORS — John vs Eve</title>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     CONFIG — REPLACE THESE TWO VALUES WITH YOUR OWN FROM SUPABASE
+     (See SETUP.md for instructions)
+     ════════════════════════════════════════════════════════════════════════ -->
+<script>
+  const SUPABASE_URL  = "PASTE_YOUR_SUPABASE_URL_HERE";
+  const SUPABASE_KEY  = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(180deg, #0a0a1e 0%, #1a0a3e 40%, #2a0a4e 100%);
+    color: #fff;
+    font-family: 'Oswald', Impact, sans-serif;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { max-width: 720px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* ─── Header ─── */
+  header { text-align: center; margin-bottom: 20px; padding-top: 8px; }
+  .live-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #ff1f6d, #ffeb00, #00d4ff);
+    padding: 2px 14px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: #0a0a1e;
+    font-weight: 700;
+    margin-bottom: 8px;
+    transform: skew(-8deg);
+  }
+  h1 {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-weight: 400;
+    font-size: clamp(44px, 11vw, 72px);
+    margin: 0;
+    color: #fff;
+    letter-spacing: 0.04em;
+    line-height: 0.95;
+    text-shadow: 0 0 20px rgba(255, 31, 109, 0.6), 0 0 40px rgba(0, 212, 255, 0.4), 4px 4px 0 #ff1f6d;
+  }
+  .tagline {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: #ffeb00;
+    font-weight: 600;
+    margin-top: 4px;
+    animation: neonFlicker 3s ease-in-out infinite;
+  }
+  .countdown { font-size: 13px; color: #00d4ff; margin-top: 8px; font-weight: 600; letter-spacing: 0.1em; }
+
+  @keyframes neonFlicker {
+    0%, 100% { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor; }
+    50% { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor; }
+  }
+
+  /* ─── Panels ─── */
+  .panel {
+    background: rgba(10, 10, 30, 0.7);
+    padding: 16px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .panel-cyan { border: 2px solid #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+  .panel-pink { border: 2px solid #ff1f6d; box-shadow: 0 0 20px rgba(255, 31, 109, 0.2); }
+  .panel-yellow { border: 2px solid #ffeb00; box-shadow: 0 0 20px rgba(255, 235, 0, 0.2); }
+  .panel-grey { border: 1.5px solid #3a3a5e; }
+  .panel-title {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.25em;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* ─── Scoreboard ─── */
+  .scoreboard {
+    background: linear-gradient(180deg, #1a1a3e 0%, #0a0a2e 100%);
+    border: 3px solid;
+    border-image: linear-gradient(135deg, #00d4ff, #ff1f6d) 1;
+    padding: 20px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.6);
+  }
+  .scoreboard-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+  .player-name {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.15em;
+    margin-bottom: 4px;
+  }
+  .player-score {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: clamp(56px, 16vw, 88px);
+    color: #fff;
+    line-height: 0.9;
+  }
+  .vs {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 32px;
+    color: #ffeb00;
+    padding: 0 8px;
+    text-shadow: 0 0 10px #ff6600, 2px 2px 0 #ff1f6d;
+    transform: rotate(-8deg);
+  }
+  .leading-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    color: #0a0a1e;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    transform: skew(-8deg);
+  }
+  .lead-text {
+    text-align: center;
+    margin-top: 14px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    color: #fff;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* John = cyan, Eve = pink */
+  .john-color { color: #00d4ff; text-shadow: 0 0 10px rgba(0, 212, 255, 0.6); }
+  .eve-color { color: #ff1f6d; text-shadow: 0 0 10px rgba(255, 31, 109, 0.6); }
+  .john-bg { background: #00d4ff; }
+  .eve-bg { background: #ff1f6d; }
+  .john-glow { text-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 40px rgba(0, 212, 255, 0.6), 4px 4px 0 #00d4ff; }
+  .eve-glow { text-shadow: 0 0 20px rgba(255, 31, 109, 0.6), 0 0 40px rgba(255, 31, 109, 0.6), 4px 4px 0 #ff1f6d; }
+
+  /* ─── Arena ─── */
+  .arena {
+    background: linear-gradient(180deg, #1a1a3e 0%, #2a1a5e 30%, #4a2a3e 70%, #6a3a2a 100%);
+    border: 3px solid #ffeb00;
+    height: 320px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(255, 235, 0, 0.3), inset 0 0 60px rgba(0,0,0,0.5);
+  }
+  .spotlight {
+    position: absolute; top: 0; width: 60px; height: 60px;
+    background: radial-gradient(circle, rgba(255, 255, 200, 0.4) 0%, transparent 70%);
+    animation: spotlight 4s ease-in-out infinite;
+  }
+  .spotlight-l { left: 10%; }
+  .spotlight-r { right: 10%; animation-delay: 2s; }
+  @keyframes spotlight {
+    0%, 100% { opacity: 0.4; transform: translateX(-30px); }
+    50% { opacity: 0.7; transform: translateX(30px); }
+  }
+  .crowd {
+    position: absolute; top: 8px; left: 0; right: 0; height: 30px;
+    background: repeating-linear-gradient(90deg, transparent 0px, transparent 8px, rgba(0,0,0,0.5) 8px, rgba(0,0,0,0.5) 14px);
+    opacity: 0.6;
+  }
+  .floor {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+    background: linear-gradient(180deg, #4a2a3e 0%, #2a1a2e 100%);
+    border-top: 2px solid #ffeb00;
+    background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 30px, rgba(255, 235, 0, 0.1) 30px, rgba(255, 235, 0, 0.1) 31px);
+  }
+  .gladiator-slot {
+    position: absolute; bottom: 0; width: 38%; max-width: 200px; height: 290px;
+  }
+  .gladiator-slot.left { left: 5%; }
+  .gladiator-slot.right { right: 5%; }
+  .gladiator-slot.shake { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px) rotate(-1deg); }
+    40% { transform: translateX(4px) rotate(1deg); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+
+  /* Gladiator SVG body parts */
+  .body-group { transform-origin: 110px 220px; transition: transform 0.15s ease-out; }
+  .body-group.hit { transform: translate(10px, 5px) rotate(8deg); }
+  .club-arm { transform-origin: 150px 130px; transform: rotate(25deg); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .club-arm-eve { transform-origin: 147px 130px; transform: rotate(25deg); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .club-arm.swing, .club-arm-eve.swing { transform: rotate(-105deg); transition: transform 0.25s cubic-bezier(0.5, 0, 0.7, 1); }
+
+  /* Impact burst */
+  .burst {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: burst 0.5s ease-out forwards;
+    z-index: 10;
+    width: 200px; height: 200px;
+  }
+  @keyframes burst {
+    0% { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 0; }
+    25% { transform: translate(-50%, -50%) scale(1.2) rotate(15deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.6) rotate(30deg); opacity: 0; }
+  }
+
+  /* ─── Buttons ─── */
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .btn {
+    background: transparent;
+    border: 2px solid #3a3a5e;
+    color: #a0a0c0;
+    padding: 12px 12px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-type {
+    border-width: 1.5px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: #a0a0c0;
+  }
+  .btn-type.active {
+    background: rgba(255, 235, 0, 0.15);
+    border-color: #ffeb00;
+    color: #ffeb00;
+  }
+  .btn-john.active {
+    background: linear-gradient(135deg, #00d4ff, #0066ff);
+    border-color: #00d4ff;
+    color: #0a0a1e;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+  }
+  .btn-john { color: #00d4ff; }
+  .btn-eve.active {
+    background: linear-gradient(135deg, #ff1f6d, #ff66a3);
+    border-color: #ff1f6d;
+    color: #0a0a1e;
+    box-shadow: 0 0 20px rgba(255, 31, 109, 0.6);
+  }
+  .btn-eve { color: #ff1f6d; }
+
+  .btn-engage {
+    width: 100%;
+    background: linear-gradient(135deg, #ff1f6d 0%, #ff3300 50%, #ffeb00 100%);
+    border: none;
+    color: #0a0a1e;
+    padding: 16px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.3em;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(255, 31, 109, 0.5), 0 4px 0 #660020;
+    font-weight: 700;
+  }
+  .btn-engage:active { transform: translateY(2px); box-shadow: 0 0 20px rgba(255, 31, 109, 0.5), 0 2px 0 #660020; }
+  .btn-engage:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ─── Breakdown ─── */
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 12px 16px;
+    align-items: center;
+    font-size: 14px;
+  }
+  .breakdown-header {
+    text-align: center;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.15em;
+  }
+  .breakdown-label {
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+  }
+  .breakdown-value {
+    text-align: center;
+    color: #fff;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 22px;
+  }
+
+  /* ─── Chart ─── */
+  .chart-wrapper { height: 220px; position: relative; }
+
+  /* ─── History ─── */
+  .history-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #00d4ff;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .history-list { margin-top: 12px; max-height: 300px; overflow-y: auto; }
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 1px solid #1a1a3e;
+    font-size: 13px;
+  }
+  .history-left { display: flex; align-items: center; gap: 10px; }
+  .history-name { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 16px; min-width: 50px; letter-spacing: 0.1em; }
+  .history-type { color: #fff; font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
+  .history-right { display: flex; align-items: center; gap: 8px; }
+  .history-time { color: #7a7aaa; font-size: 11px; font-family: 'Oswald', sans-serif; }
+  .delete-btn {
+    background: transparent;
+    border: none;
+    color: #ff1f6d;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+  }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed;
+    top: max(20px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff1f6d, #ff3300, #ffeb00);
+    border: 2px solid #fff;
+    color: #0a0a1e;
+    padding: 12px 24px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    box-shadow: 0 4px 20px rgba(255, 31, 109, 0.6);
+    animation: slideIn 0.3s ease-out;
+    z-index: 100;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  @keyframes slideIn {
+    from { transform: translate(-50%, -30px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+  }
+
+  /* ─── Status / errors ─── */
+  .status {
+    text-align: center;
+    padding: 12px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    color: #ffeb00;
+    border: 1px dashed #ffeb00;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .status.error { color: #ff1f6d; border-color: #ff1f6d; }
+  .status.hidden { display: none; }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 14px;
+    color: #5a5a7a;
+    letter-spacing: 0.3em;
+  }
+  .sync-indicator {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .sync-indicator.offline { background: #ff1f6d; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="live-badge">★ LIVE FROM THE ARENA ★</div>
+    <h1>GLADIATORS</h1>
+    <div class="tagline">⚡ READY ⚡ STEADY ⚡ GO! ⚡</div>
+    <div class="countdown" id="countdown">— DAYS TO THE ETERNAL ELIMINATOR</div>
+    <div style="font-size: 11px; color: #7a7aaa; margin-top: 6px; font-family: Oswald;">
+      <span class="sync-indicator" id="syncDot"></span><span id="syncText">connected</span>
+    </div>
+  </header>
+
+  <div id="status" class="status hidden"></div>
+
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="scoreboard-grid">
+      <div style="text-align: center;">
+        <div class="player-name john-color">JOHN</div>
+        <div class="player-score" id="scoreJohn">0</div>
+        <div id="leadingJohn"></div>
+      </div>
+      <div class="vs">VS</div>
+      <div style="text-align: center;">
+        <div class="player-name eve-color">EVE</div>
+        <div class="player-score" id="scoreEve">0</div>
+        <div id="leadingEve"></div>
+      </div>
+    </div>
+    <div class="lead-text" id="leadText"></div>
+  </div>
+
+  <!-- Arena -->
+  <div class="arena" id="arena">
+    <div class="spotlight spotlight-l"></div>
+    <div class="spotlight spotlight-r"></div>
+    <div class="crowd"></div>
+    <div class="floor"></div>
+
+    <!-- John (left) -->
+    <div class="gladiator-slot left" id="slotJohn">
+      <svg viewBox="0 0 220 320" style="width: 100%; height: 100%; overflow: visible;">
+        <ellipse cx="110" cy="310" rx="60" ry="6" fill="#000" opacity="0.5" />
+        <g class="body-group" id="bodyJohn">
+          <!-- Legs -->
+          <path d="M 78 215 Q 70 260 75 295 L 95 298 Q 100 260 95 215 Z" fill="#d89070" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 110 215 Q 115 260 115 295 L 135 295 Q 138 260 130 215 Z" fill="#c87a5a" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 85 240 Q 88 265 88 285" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.5" />
+          <path d="M 122 240 Q 125 265 125 285" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.5" />
+          <rect x="72" y="293" width="26" height="12" fill="#1a1a2e" rx="2" />
+          <rect x="110" y="293" width="28" height="12" fill="#1a1a2e" rx="2" />
+          <rect x="72" y="288" width="26" height="4" fill="#00d4ff" />
+          <rect x="110" y="288" width="28" height="4" fill="#00d4ff" />
+          <!-- Trunks -->
+          <defs>
+            <linearGradient id="trunksBlue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0080ff" />
+              <stop offset="100%" stop-color="#001a4d" />
+            </linearGradient>
+          </defs>
+          <path d="M 72 175 L 68 220 L 140 220 L 138 175 Z" fill="url(#trunksBlue)" stroke="#001a4d" stroke-width="2" />
+          <path d="M 100 185 L 110 195 L 105 200 L 115 215 L 100 205 L 105 200 Z" fill="#ffeb00" stroke="#ff6600" stroke-width="1" />
+          <!-- Lats -->
+          <path d="M 70 130 Q 50 145 55 175 L 75 178 L 78 130 Z" fill="#d89070" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 150 130 Q 170 145 165 175 L 145 178 L 142 130 Z" fill="#d89070" stroke="#3a1a08" stroke-width="2" />
+          <!-- Torso -->
+          <path d="M 75 115 Q 72 165 75 180 L 145 180 Q 148 165 145 115 Z" fill="#e8a080" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 110 118 L 110 150" stroke="#7a3a1a" stroke-width="1.5" opacity="0.6" />
+          <path d="M 80 130 Q 95 148 110 148 Q 125 148 140 130" stroke="#7a3a1a" stroke-width="1.8" fill="none" opacity="0.7" />
+          <path d="M 95 155 Q 110 158 125 155" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.6" />
+          <path d="M 95 165 Q 110 168 125 165" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.6" />
+          <path d="M 95 175 Q 110 178 125 175" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.6" />
+          <path d="M 110 150 L 110 180" stroke="#7a3a1a" stroke-width="1.2" opacity="0.5" />
+          <!-- Left arm -->
+          <ellipse cx="70" cy="125" rx="16" ry="14" fill="#e8a080" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 60 130 Q 45 145 50 175 Q 60 180 70 170 Q 72 150 70 130 Z" fill="#d89070" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 55 145 Q 52 155 55 165" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.6" />
+          <path d="M 50 175 Q 38 195 40 215" stroke="#d89070" stroke-width="14" fill="none" stroke-linecap="round" />
+          <circle cx="40" cy="218" r="9" fill="#d89070" stroke="#3a1a08" stroke-width="1.8" />
+          <rect x="32" y="208" width="16" height="6" fill="#00d4ff" stroke="#001a4d" stroke-width="1" rx="1" />
+          <!-- Club arm -->
+          <g class="club-arm" id="clubArmJohn">
+            <ellipse cx="150" cy="125" rx="16" ry="14" fill="#e8a080" stroke="#3a1a08" stroke-width="2" />
+            <path d="M 160 130 Q 178 145 175 175 Q 165 180 152 170 Q 148 150 152 130 Z" fill="#d89070" stroke="#3a1a08" stroke-width="2" />
+            <path d="M 168 145 Q 172 155 168 165" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.6" />
+            <path d="M 175 175 Q 188 190 195 200" stroke="#d89070" stroke-width="14" fill="none" stroke-linecap="round" />
+            <circle cx="197" cy="202" r="9" fill="#d89070" stroke="#3a1a08" stroke-width="1.8" />
+            <rect x="189" y="192" width="16" height="6" fill="#00d4ff" stroke="#001a4d" stroke-width="1" rx="1" />
+            <rect x="194" y="150" width="6" height="50" fill="#1a1a2e" stroke="#000" stroke-width="1" rx="2" />
+            <ellipse cx="197" cy="148" rx="14" ry="20" fill="#0080ff" stroke="#001a4d" stroke-width="2" />
+            <ellipse cx="197" cy="148" rx="9" ry="14" fill="#ffeb00" />
+            <ellipse cx="197" cy="148" rx="5" ry="8" fill="#ff3300" />
+          </g>
+          <!-- Head -->
+          <path d="M 88 80 Q 88 115 110 120 Q 132 115 132 80 Q 132 60 110 58 Q 88 60 88 80 Z" fill="#e8a080" stroke="#3a1a08" stroke-width="2" />
+          <path d="M 92 95 Q 110 118 128 95" stroke="#7a3a1a" stroke-width="1.2" fill="none" opacity="0.5" />
+          <path d="M 86 75 Q 84 50 95 48 Q 105 45 110 50 Q 115 45 125 48 Q 136 50 134 75 Q 130 65 125 62 Q 118 58 110 62 Q 102 58 95 62 Q 90 65 86 75 Z" fill="#1a0a05" />
+          <path d="M 100 55 Q 108 53 115 55" stroke="#3a1f10" stroke-width="1" fill="none" />
+          <ellipse cx="100" cy="85" rx="3" ry="2" fill="#fff" />
+          <ellipse cx="120" cy="85" rx="3" ry="2" fill="#fff" />
+          <circle cx="100" cy="85" r="1.6" fill="#1a0a05" />
+          <circle cx="120" cy="85" r="1.6" fill="#1a0a05" />
+          <path d="M 94 78 L 104 80" stroke="#1a0a05" stroke-width="2" stroke-linecap="round" />
+          <path d="M 116 80 L 126 78" stroke="#1a0a05" stroke-width="2" stroke-linecap="round" />
+          <path d="M 110 88 L 108 100 L 112 100 Z" fill="#a06050" opacity="0.6" />
+          <path d="M 102 108 Q 110 112 118 108" stroke="#3a1a08" stroke-width="1.5" fill="none" />
+          <rect x="105" y="108" width="10" height="3" fill="#fff" stroke="#3a1a08" stroke-width="0.5" />
+        </g>
+      </svg>
+    </div>
+
+    <!-- Eve (right) - mirrored -->
+    <div class="gladiator-slot right" id="slotEve">
+      <svg viewBox="0 0 220 320" style="width: 100%; height: 100%; overflow: visible;">
+        <g transform="scale(-1, 1) translate(-220, 0)">
+          <ellipse cx="110" cy="310" rx="60" ry="6" fill="#000" opacity="0.5" />
+          <g class="body-group" id="bodyEve">
+            <path d="M 82 215 Q 76 260 80 295 L 98 298 Q 102 260 98 215 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 112 215 Q 116 260 118 295 L 136 295 Q 140 260 132 215 Z" fill="#e8b888" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 88 240 Q 90 265 90 285" stroke="#a05030" stroke-width="1" fill="none" opacity="0.5" />
+            <path d="M 124 240 Q 126 265 126 285" stroke="#a05030" stroke-width="1" fill="none" opacity="0.5" />
+            <rect x="76" y="293" width="26" height="12" fill="#1a1a2e" rx="2" />
+            <rect x="112" y="293" width="28" height="12" fill="#1a1a2e" rx="2" />
+            <rect x="76" y="288" width="26" height="4" fill="#ff1f6d" />
+            <rect x="112" y="288" width="28" height="4" fill="#ff1f6d" />
+            <defs>
+              <linearGradient id="leoPink" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ff1f6d" />
+                <stop offset="100%" stop-color="#660020" />
+              </linearGradient>
+              <linearGradient id="topPink" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ff66a3" />
+                <stop offset="100%" stop-color="#ff1f6d" />
+              </linearGradient>
+            </defs>
+            <path d="M 75 175 L 70 220 L 140 220 L 138 175 Z" fill="url(#leoPink)" stroke="#660020" stroke-width="2" />
+            <path d="M 110 192 L 113 200 L 121 200 L 115 205 L 117 213 L 110 208 L 103 213 L 105 205 L 99 200 L 107 200 Z" fill="#ffeb00" stroke="#ff6600" stroke-width="0.8" />
+            <path d="M 73 135 Q 56 148 60 175 L 76 178 L 78 135 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 147 135 Q 164 148 160 175 L 144 178 L 142 135 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 78 115 Q 76 145 78 150 L 142 150 Q 144 145 142 115 Z" fill="url(#topPink)" stroke="#660020" stroke-width="2" />
+            <path d="M 85 132 Q 110 138 135 132" stroke="#fff" stroke-width="1.2" fill="none" opacity="0.6" />
+            <path d="M 80 150 Q 78 170 80 180 L 140 180 Q 142 170 140 150 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 100 158 Q 110 161 120 158" stroke="#a05030" stroke-width="1" fill="none" opacity="0.6" />
+            <path d="M 100 168 Q 110 171 120 168" stroke="#a05030" stroke-width="1" fill="none" opacity="0.6" />
+            <path d="M 110 152 L 110 178" stroke="#a05030" stroke-width="1" opacity="0.5" />
+            <ellipse cx="73" cy="128" rx="14" ry="12" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 64 132 Q 50 148 54 175 Q 64 180 73 170 Q 75 150 73 132 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 58 145 Q 56 155 58 165" stroke="#a05030" stroke-width="1" fill="none" opacity="0.6" />
+            <path d="M 54 175 Q 42 195 44 215" stroke="#f4cc9a" stroke-width="13" fill="none" stroke-linecap="round" />
+            <circle cx="44" cy="218" r="8" fill="#f4cc9a" stroke="#5a2a10" stroke-width="1.8" />
+            <rect x="36" y="208" width="16" height="6" fill="#ff1f6d" stroke="#660020" stroke-width="1" rx="1" />
+            <g class="club-arm-eve" id="clubArmEve">
+              <ellipse cx="147" cy="128" rx="14" ry="12" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+              <path d="M 156 132 Q 172 148 168 175 Q 158 180 148 170 Q 145 150 148 132 Z" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+              <path d="M 164 145 Q 168 155 164 165" stroke="#a05030" stroke-width="1" fill="none" opacity="0.6" />
+              <path d="M 168 175 Q 182 190 190 200" stroke="#f4cc9a" stroke-width="13" fill="none" stroke-linecap="round" />
+              <circle cx="192" cy="202" r="8" fill="#f4cc9a" stroke="#5a2a10" stroke-width="1.8" />
+              <rect x="184" y="192" width="16" height="6" fill="#ff1f6d" stroke="#660020" stroke-width="1" rx="1" />
+              <rect x="189" y="150" width="6" height="50" fill="#1a1a2e" stroke="#000" stroke-width="1" rx="2" />
+              <ellipse cx="192" cy="148" rx="14" ry="20" fill="#ff1f6d" stroke="#660020" stroke-width="2" />
+              <ellipse cx="192" cy="148" rx="9" ry="14" fill="#ffeb00" />
+              <ellipse cx="192" cy="148" rx="5" ry="8" fill="#ff3300" />
+            </g>
+            <ellipse cx="110" cy="92" rx="22" ry="26" fill="#f4cc9a" stroke="#5a2a10" stroke-width="2" />
+            <path d="M 85 88 Q 80 50 110 45 Q 140 50 135 88 Q 142 95 145 110 L 152 145 Q 148 165 140 165 L 138 130 Q 138 105 130 95 Q 122 78 110 80 Q 98 78 90 95 Q 82 105 82 130 L 80 165 Q 72 165 68 145 L 75 110 Q 78 95 85 88 Z" fill="#ffd83a" stroke="#a07820" stroke-width="1" />
+            <path d="M 88 100 Q 84 130 80 155" stroke="#fff5a0" stroke-width="2" fill="none" opacity="0.7" />
+            <path d="M 132 100 Q 136 130 140 155" stroke="#fff5a0" stroke-width="2" fill="none" opacity="0.7" />
+            <path d="M 95 70 Q 110 65 125 70" stroke="#fff5a0" stroke-width="1.2" fill="none" opacity="0.6" />
+            <rect x="83" y="68" width="54" height="6" fill="#ff1f6d" stroke="#660020" stroke-width="1" rx="2" />
+            <path d="M 110 71 L 113 76 L 119 76 L 114 79 L 116 84 L 110 81 L 104 84 L 106 79 L 101 76 L 107 76 Z" fill="#ffeb00" />
+            <ellipse cx="100" cy="90" rx="3" ry="2" fill="#fff" />
+            <ellipse cx="120" cy="90" rx="3" ry="2" fill="#fff" />
+            <circle cx="100" cy="90" r="1.6" fill="#1a3050" />
+            <circle cx="120" cy="90" r="1.6" fill="#1a3050" />
+            <path d="M 95 86 Q 100 84 105 86" stroke="#ff1f6d" stroke-width="0.8" fill="none" opacity="0.7" />
+            <path d="M 115 86 Q 120 84 125 86" stroke="#ff1f6d" stroke-width="0.8" fill="none" opacity="0.7" />
+            <path d="M 96 87 L 104 87" stroke="#1a0a05" stroke-width="0.8" />
+            <path d="M 116 87 L 124 87" stroke="#1a0a05" stroke-width="0.8" />
+            <path d="M 94 82 L 104 84" stroke="#a07820" stroke-width="2" stroke-linecap="round" />
+            <path d="M 116 84 L 126 82" stroke="#a07820" stroke-width="2" stroke-linecap="round" />
+            <path d="M 110 95 L 108 105 L 112 105 Z" fill="#c08868" opacity="0.5" />
+            <path d="M 102 112 Q 110 116 118 112 Q 110 114 102 112 Z" fill="#dc1f3d" stroke="#660020" stroke-width="0.8" />
+            <path d="M 105 111 Q 110 110 115 111" stroke="#ff66a3" stroke-width="0.6" fill="none" />
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Burst container -->
+    <div id="burstContainer"></div>
+  </div>
+
+  <!-- Log -->
+  <div class="panel panel-cyan">
+    <div class="panel-title" style="color: #ffeb00; text-shadow: 0 0 10px #ff6600;">⚡ LOG A WORKOUT ⚡</div>
+    <div class="btn-grid">
+      <button class="btn btn-john active" data-player="john">JOHN</button>
+      <button class="btn btn-eve" data-player="eve">EVE</button>
+    </div>
+    <div class="btn-grid" style="margin-bottom: 14px;">
+      <button class="btn btn-type active" data-type="weights"><span style="font-size:18px;">🏋</span><span>Weights</span></button>
+      <button class="btn btn-type" data-type="swimming"><span style="font-size:18px;">🏊</span><span>Swimming</span></button>
+      <button class="btn btn-type" data-type="running"><span style="font-size:18px;">🏃</span><span>Running</span></button>
+      <button class="btn btn-type" data-type="class"><span style="font-size:18px;">💪</span><span>Class</span></button>
+      <button class="btn btn-type" data-type="no_booze_x3" style="grid-column: 1 / -1;"><span style="font-size:18px;">🚫🍺</span><span>No Booze x3</span></button>
+    </div>
+    <button class="btn-engage" id="engageBtn">⚡ ENGAGE! ⚡</button>
+  </div>
+
+  <!-- Breakdown -->
+  <div class="panel panel-pink" id="breakdownPanel" style="display:none;">
+    <div class="panel-title eve-color">★ EVENT BREAKDOWN ★</div>
+    <div class="breakdown-grid" id="breakdownGrid"></div>
+  </div>
+
+  <!-- Chart -->
+  <div class="panel panel-yellow" id="chartPanel" style="display:none;">
+    <div class="panel-title" style="color: #ffeb00;">★ THE LEADERBOARD ★</div>
+    <div class="chart-wrapper"><canvas id="chartCanvas"></canvas></div>
+  </div>
+
+  <!-- History -->
+  <div class="panel panel-grey" id="historyPanel" style="display:none;">
+    <button class="history-toggle" id="historyToggle">▶ EVENT HISTORY (<span id="historyCount">0</span>)</button>
+    <div class="history-list" id="historyList" style="display:none;"></div>
+  </div>
+
+  <div class="footer">⚡ AWOOOGA ⚡ FINAL ELIMINATOR · 20 AUGUST ⚡</div>
+
+</div>
+
+<script>
+  // ─── CONFIG CHECK ───────────────────────────────────────────────────────
+  const statusEl = document.getElementById('status');
+  if (SUPABASE_URL.includes('PASTE') || SUPABASE_KEY.includes('PASTE')) {
+    statusEl.classList.remove('hidden');
+    statusEl.classList.add('error');
+    statusEl.textContent = '⚠ Setup incomplete — open the HTML file in a text editor and paste your Supabase URL and key at the top.';
+  }
+
+  // ─── SUPABASE ───────────────────────────────────────────────────────────
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ─── STATE ──────────────────────────────────────────────────────────────
+  const PLAYERS = {
+    john: { name: 'John', color: '#00d4ff' },
+    eve:  { name: 'Eve',  color: '#ff1f6d' },
+  };
+  const TYPES = {
+    weights: { label: 'Weights', icon: '🏋' },
+    swimming:{ label: 'Swimming', icon: '🏊' },
+    running: { label: 'Running', icon: '🏃' },
+    class:   { label: 'Class', icon: '💪' },
+    no_booze_x3: { label: 'No Booze x3', icon: '🚫🍺' },
+  };
+  const END_DATE = new Date('2026-08-20T23:59:59');
+
+  let workouts = [];
+  let activePlayer = 'john';
+  let activeType = 'weights';
+  let chart = null;
+
+  // ─── COUNTDOWN ──────────────────────────────────────────────────────────
+  function updateCountdown() {
+    const days = Math.max(0, Math.ceil((END_DATE - new Date()) / (1000 * 60 * 60 * 24)));
+    document.getElementById('countdown').textContent =
+      `${days} ${days === 1 ? 'DAY' : 'DAYS'} TO THE ETERNAL ELIMINATOR`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 60000);
+
+  // ─── SYNC INDICATOR ─────────────────────────────────────────────────────
+  function setSync(connected, msg) {
+    const dot = document.getElementById('syncDot');
+    const txt = document.getElementById('syncText');
+    if (connected) {
+      dot.classList.remove('offline');
+      txt.textContent = msg || 'connected';
+    } else {
+      dot.classList.add('offline');
+      txt.textContent = msg || 'offline';
+    }
+  }
+
+  // ─── LOAD ───────────────────────────────────────────────────────────────
+  async function loadWorkouts() {
+    try {
+      const { data, error } = await supa
+        .from('workouts')
+        .select('*')
+        .order('ts', { ascending: true });
+      if (error) throw error;
+      workouts = data || [];
+      setSync(true);
+      render();
+    } catch (e) {
+      console.error('Load failed', e);
+      setSync(false, 'load failed');
+      statusEl.classList.remove('hidden');
+      statusEl.classList.add('error');
+      statusEl.textContent = '⚠ Could not load — check Supabase config. ' + (e.message || '');
+    }
+  }
+
+  // ─── REALTIME ───────────────────────────────────────────────────────────
+  function subscribeRealtime() {
+    supa.channel('workouts-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          if (!workouts.find(w => w.id === payload.new.id)) {
+            workouts.push(payload.new);
+            // If the insert came from the OTHER player (not us), play their animation
+            const myLastEntry = workouts[workouts.length - 1];
+            // Trigger animation for the player who just logged
+            triggerAnim(payload.new.player);
+            render();
+          }
+        } else if (payload.eventType === 'DELETE') {
+          workouts = workouts.filter(w => w.id !== payload.old.id);
+          render();
+        }
+      })
+      .subscribe();
+  }
+
+  // ─── LOG ────────────────────────────────────────────────────────────────
+  async function logWorkout() {
+    const btn = document.getElementById('engageBtn');
+    btn.disabled = true;
+    const entry = {
+      player: activePlayer,
+      type: activeType,
+      ts: new Date().toISOString(),
+    };
+    try {
+      const { data, error } = await supa.from('workouts').insert(entry).select().single();
+      if (error) throw error;
+      // Realtime will add it, but add immediately for snappy UX
+      if (!workouts.find(w => w.id === data.id)) {
+        workouts.push(data);
+        triggerAnim(activePlayer);
+        render();
+      }
+      showToast(`${PLAYERS[activePlayer].name} logged ${TYPES[activeType].label}!`);
+    } catch (e) {
+      console.error('Insert failed', e);
+      showToast('Save failed — check connection');
+    }
+    btn.disabled = false;
+  }
+
+  async function deleteWorkout(id) {
+    if (!confirm('Remove this entry?')) return;
+    try {
+      const { error } = await supa.from('workouts').delete().eq('id', id);
+      if (error) throw error;
+      workouts = workouts.filter(w => w.id !== id);
+      render();
+    } catch (e) {
+      alert('Delete failed: ' + (e.message || e));
+    }
+  }
+
+  // ─── ANIMATION ──────────────────────────────────────────────────────────
+  function triggerAnim(swinger) {
+    const target = swinger === 'john' ? 'eve' : 'john';
+    const swingerArm = document.getElementById(swinger === 'john' ? 'clubArmJohn' : 'clubArmEve');
+    const targetBody = document.getElementById(target === 'john' ? 'bodyJohn' : 'bodyEve');
+    const targetSlot = document.getElementById(target === 'john' ? 'slotJohn' : 'slotEve');
+
+    swingerArm.classList.add('swing');
+
+    setTimeout(() => {
+      targetBody.classList.add('hit');
+      targetSlot.classList.add('shake');
+      // Burst
+      const burst = document.createElement('div');
+      burst.className = 'burst';
+      burst.style.left = target === 'john' ? '38%' : '62%';
+      burst.style.top = '42%';
+      burst.innerHTML = `
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          ${Array.from({length: 12}).map((_, i) => {
+            const angle = (i * 30) * Math.PI / 180;
+            const r1 = 28, r2 = 75;
+            return `<path d="M ${100 + Math.cos(angle) * r1} ${100 + Math.sin(angle) * r1} L ${100 + Math.cos(angle) * r2} ${100 + Math.sin(angle) * r2}" stroke="#ffeb00" stroke-width="7" stroke-linecap="round" />`;
+          }).join('')}
+          <circle cx="100" cy="100" r="34" fill="#ff3300" opacity="0.85" />
+          <circle cx="100" cy="100" r="22" fill="#ffeb00" />
+          <text x="100" y="112" text-anchor="middle" font-size="36" font-family="Bebas Neue, Impact, sans-serif" font-weight="900" fill="#1a0a05" letter-spacing="2">BOSH!</text>
+        </svg>
+      `;
+      document.getElementById('burstContainer').appendChild(burst);
+      setTimeout(() => burst.remove(), 600);
+    }, 220);
+
+    setTimeout(() => {
+      swingerArm.classList.remove('swing');
+      targetBody.classList.remove('hit');
+      targetSlot.classList.remove('shake');
+    }, 750);
+  }
+
+  // ─── TOAST ──────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2200);
+  }
+
+  // ─── RENDER ─────────────────────────────────────────────────────────────
+  function render() {
+    const stats = { john: { total: 0, weights: 0, swimming: 0, running: 0, class: 0, no_booze_x3: 0 },
+                    eve:  { total: 0, weights: 0, swimming: 0, running: 0, class: 0, no_booze_x3: 0 } };
+    workouts.forEach(w => {
+      if (stats[w.player]) {
+        stats[w.player].total++;
+        if (stats[w.player][w.type] !== undefined) stats[w.player][w.type]++;
+      }
+    });
+
+    // Scores
+    document.getElementById('scoreJohn').textContent = stats.john.total;
+    document.getElementById('scoreEve').textContent = stats.eve.total;
+    const sJohn = document.getElementById('scoreJohn');
+    const sEve = document.getElementById('scoreEve');
+    sJohn.classList.remove('john-glow'); sEve.classList.remove('eve-glow');
+
+    const leader = stats.john.total > stats.eve.total ? 'john'
+                 : stats.eve.total > stats.john.total ? 'eve' : null;
+    const diff = Math.abs(stats.john.total - stats.eve.total);
+
+    document.getElementById('leadingJohn').innerHTML =
+      leader === 'john' ? '<div class="leading-badge john-bg">★ LEADING ★</div>' : '';
+    document.getElementById('leadingEve').innerHTML =
+      leader === 'eve'  ? '<div class="leading-badge eve-bg">★ LEADING ★</div>' : '';
+    if (leader === 'john') sJohn.classList.add('john-glow');
+    if (leader === 'eve')  sEve.classList.add('eve-glow');
+
+    document.getElementById('leadText').textContent =
+      workouts.length === 0 ? '' :
+      leader ? `${PLAYERS[leader].name} leads by ${diff}` : "It's neck and neck!";
+
+    // Breakdown
+    const bp = document.getElementById('breakdownPanel');
+    if (workouts.length > 0) {
+      bp.style.display = 'block';
+      const grid = document.getElementById('breakdownGrid');
+      grid.innerHTML = `
+        <div></div>
+        <div class="breakdown-header john-color">JOHN</div>
+        <div class="breakdown-header eve-color">EVE</div>
+      ` + Object.entries(TYPES).map(([id, t]) => `
+        <div class="breakdown-label"><span style="font-size:18px;">${t.icon}</span><span>${t.label}</span></div>
+        <div class="breakdown-value">${stats.john[id]}</div>
+        <div class="breakdown-value">${stats.eve[id]}</div>
+      `).join('');
+    } else {
+      bp.style.display = 'none';
+    }
+
+    // Chart
+    const cp = document.getElementById('chartPanel');
+    if (workouts.length > 0) {
+      const sorted = [...workouts].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+      const start = new Date(sorted[0].ts); start.setHours(0,0,0,0);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const labels = []; const jSeries = []; const eSeries = [];
+      let jc = 0, ec = 0;
+      const cur = new Date(start);
+      while (cur <= today) {
+        const dayStr = cur.toISOString().slice(0,10);
+        sorted.filter(w => w.ts.slice(0,10) === dayStr).forEach(w => {
+          if (w.player === 'john') jc++; else if (w.player === 'eve') ec++;
+        });
+        labels.push(`${cur.getDate()}/${cur.getMonth()+1}`);
+        jSeries.push(jc); eSeries.push(ec);
+        cur.setDate(cur.getDate() + 1);
+      }
+      if (labels.length > 1) {
+        cp.style.display = 'block';
+        if (chart) chart.destroy();
+        chart = new Chart(document.getElementById('chartCanvas'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'JOHN', data: jSeries, borderColor: '#00d4ff', backgroundColor: '#00d4ff', borderWidth: 3, tension: 0.2 },
+              { label: 'EVE',  data: eSeries, borderColor: '#ff1f6d', backgroundColor: '#ff1f6d', borderWidth: 3, tension: 0.2 },
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#fff', font: { family: 'Bebas Neue', size: 14 } } },
+              tooltip: { backgroundColor: '#0a0a1e', borderColor: '#ffeb00', borderWidth: 2, titleColor: '#fff', bodyColor: '#fff' },
+            },
+            scales: {
+              x: { ticks: { color: '#a0a0c0', font: { family: 'Oswald' } }, grid: { color: '#3a3a5e' } },
+              y: { ticks: { color: '#a0a0c0', font: { family: 'Oswald' }, precision: 0 }, grid: { color: '#3a3a5e' }, beginAtZero: true },
+            },
+          }
+        });
+      } else {
+        cp.style.display = 'none';
+      }
+    } else {
+      cp.style.display = 'none';
+    }
+
+    // History
+    const hp = document.getElementById('historyPanel');
+    if (workouts.length > 0) {
+      hp.style.display = 'block';
+      document.getElementById('historyCount').textContent = workouts.length;
+      const recent = [...workouts].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 50);
+      document.getElementById('historyList').innerHTML = recent.map(w => {
+        const t = TYPES[w.type] || { icon: '?', label: w.type };
+        const d = new Date(w.ts);
+        return `
+          <div class="history-item">
+            <div class="history-left">
+              <span class="history-name ${w.player}-color">${PLAYERS[w.player].name.toUpperCase()}</span>
+              <span class="history-type">${t.icon} ${t.label}</span>
+            </div>
+            <div class="history-right">
+              <span class="history-time">${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+              <button class="delete-btn" data-id="${w.id}">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      hp.style.display = 'none';
+    }
+  }
+
+  // ─── EVENT WIRING ───────────────────────────────────────────────────────
+  document.querySelectorAll('[data-player]').forEach(b => {
+    b.addEventListener('click', () => {
+      activePlayer = b.dataset.player;
+      document.querySelectorAll('[data-player]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+  document.querySelectorAll('[data-type]').forEach(b => {
+    b.addEventListener('click', () => {
+      activeType = b.dataset.type;
+      document.querySelectorAll('[data-type]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+  document.getElementById('engageBtn').addEventListener('click', logWorkout);
+  document.getElementById('historyToggle').addEventListener('click', () => {
+    const list = document.getElementById('historyList');
+    const btn = document.getElementById('historyToggle');
+    const isHidden = list.style.display === 'none';
+    list.style.display = isHidden ? 'block' : 'none';
+    btn.innerHTML = (isHidden ? '▼' : '▶') + ` EVENT HISTORY (<span id="historyCount">${workouts.length}</span>)`;
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('delete-btn')) {
+      deleteWorkout(e.target.dataset.id);
+    }
+  });
+
+  // ─── BOOT ───────────────────────────────────────────────────────────────
+  if (!SUPABASE_URL.includes('PASTE') && !SUPABASE_KEY.includes('PASTE')) {
+    loadWorkouts();
+    subscribeRealtime();
+  }
+</script>
+
+</body>
+</html>
