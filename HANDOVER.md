@@ -193,6 +193,14 @@ If the user asks for any of these, here’s some context on each:
 - **Netlify CLI:** `netlify deploy --prod --dir=.` from the file’s directory (requires `npm install -g netlify-cli` and `netlify link`)
 1. Hard-refresh on both phones to clear cache (or wait — Netlify cache is short)
 
+## Repository & deployment notes (added June 2026)
+
+- **Source of truth:** GitHub repo `jgill87/gladiators`. The committed `index.html` has **placeholder** Supabase credentials — the deployed copy is identical except the real `SUPABASE_URL` and publishable key are pasted into the two constants at the top. Never commit the real key (it's low-risk but keeps the repo clean); never deploy the placeholder version (the app won't connect).
+- **Netlify site:** `loquacious-conkies-b2c6b9` (site id `49c443ea-be3c-4033-8aa8-b800f29ccfc4`), live at https://loquacious-conkies-b2c6b9.netlify.app
+- **Netlify API deploy gotcha:** do NOT use the zip-upload deploy API (`POST /deploys` with `Content-Type: application/zip`) — Netlify registers the file at path `/` with MIME `text/plain` and the browser shows raw source. Use the **file-digest method** instead (declare `{"files": {"/index.html": "<sha1>"}}`, then PUT the file body), which is what the dashboard drag-drop uses. Verify the live root serves `content-type: text/html` after any deploy.
+- **Schema migrations** live in `migrations/` as plain SQL. They can be run via the Supabase SQL Editor, or hands-free via the Management API (`POST https://api.supabase.com/v1/projects/krpnvhcyjldyrhshvpdc/database/query` with a personal access token). The publishable key can also be fetched via the Management API (`GET /v1/projects/{ref}/api-keys?reveal=true`), so a fresh access token is the only secret needed for fully autonomous changes.
+- **June 2026 change:** added the fifth workout type `no_booze_x3` (🚫🍺, "No Booze x3" — logged once per completed three-day alcohol-free stretch, worth 1 point like the others). Required `migrations/2026-06-12-add-no-booze-x3.sql`.
+
 ## Credentials & access (for John to share with Claude Code if needed)
 
 John will need to share:
