@@ -1,3 +1,17 @@
+# Christmas revision — September 2026
+
+The current `index.html` is the Christmas edition: John and Eve wear Santa outfits in a snowy forest. Successful workout inserts (local or realtime) queue a snowball throw at the opponent. All five activity types, existing records, chart, history and deletion behavior are retained. The countdown finishes at the end of **19 December 2026**, in the device’s local timezone. As before, the deadline is informational and does not block later logging or exclude records.
+
+The source remains one static HTML file with inline SVG/CSS/JavaScript and the original CDN dependencies. No database migration is required. Reduced motion preferences suppress flight/recoil; overlapping throws run sequentially. Saves capture the selected player and activity before awaiting the request.
+
+Repository source retains placeholder Supabase values. For deployment, insert the existing public connection values, or run the optional `build.py` with `SUPABASE_URL` and `SUPABASE_KEY` environment variables. It writes `dist/index.html`, excluded from Git. Never use a service-role key. The connected review build uses the existing backend, so logging affects real records.
+
+Validation: JavaScript syntax, deadline, player selection during pending saves, realtime deduplication, queued throws in both directions, and failed-save recovery checked with an isolated mocked backend. No test workouts were inserted into the live database.
+
+The historical notes below describe the original edition and deployment.
+
+---
+
 # Gladiators App — Handover Document
 
 ## Project overview
